@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "zoo",
+            "database": "${workspaceFolder:zoo}/zoo.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

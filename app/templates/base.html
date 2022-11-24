@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        {% block head %}
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <script src="https://cdn.jsdelivr.net/npm/handsontable@12.0.0/dist/handsontable.full.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/handsontable@12.0.0/dist/handsontable.full.min.css" rel="stylesheet" media="screen">  
+        
+        
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/luxon@1.26.0/build/global/luxon.min.js"></script>  
+        
+
+        {% block styles %}             
+            <!-- Bootstrap CSS -->            
+            {{ bootstrap.load_css() }} 
+            <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
+            
+        {% endblock %}
+        <title>Zoo App</title>
+        {% endblock %}
+    </head>
+    
+    <body body style="background:#f4f4f4 !important; color:rgb(24, 22, 22) !important;" > 
+
+        <div class = container-fluid>    
+            <div id="intro" class="view">
+                <div class="mask">                   
+                    <nav class="navbar navbar-expand-md navbar-hover navbar-custom" id = "menu">
+                        <a class="navbar-brand" id = 'nb' style="font-family:verdana; font-size: 35px" href="{{ url_for('main.index') }}">Zoo App</a>                            
+                        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHover" aria-controls="navbarHover" aria-expanded="false" aria-label="Navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>                            
+                        <div class="collapse navbar-collapse" id="navbarHover">
+                            <ul class="navbar-nav">
+                                {% if ( current_user.is_authenticated)%}
+
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Database
+                                    </a>
+                                    <ul class="dropdown-menu">    
+                                        <li><a class="dropdown-item" href="{{ url_for('main.init_database') }}">Initialize DB</a></li>                                                                               
+                                    </ul>                                    
+                                </li>                               
+                                
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Animals
+                                    </a>
+                                    <ul class="dropdown-menu">                                            
+                                        <li><a class="dropdown-item" href="{{ url_for('main.animals') }}">Add</a></li>                                                                           
+                                        <li><a class="dropdown-item" href="{{ url_for('main.animal_edit') }}">Edit</a></li>                                                                           
+                                    </ul>
+                                    
+                                </li>                                
+                                
+                                {% endif %}
+                            </ul>
+                            <ul class="navbar-nav navbar-right ms-auto">                            
+                                {% if current_user.is_anonymous %}
+                                    <li><a class="nav-link" href="{{ url_for('main.login') }}">Login</a></li>
+                                    <li><a class="nav-link" href="{{ url_for('main.register') }}">Register</a></li>
+                                {% else %}                             
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ url_for('main.logout') }}">Logout {{ current_user.get_email() }}</a>
+                                    </li> 
+                                {% endif %}
+                            </ul>        
+                        </div>
+                    </nav>                      
+                </div>
+            </div>    
+            {% block content %}
+            <br>
+            <div class="container" >
+                <div class = 'flash_message'>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        <!-- Categories: success (green), info (blue), warning (yellow), danger (red) -->
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible" role="alert">
+                                    <button class="btn-close" data-bs-dismiss="alert"><span aria-hidden="true">&times;</span></button>                            
+                                    <strong>{{ message }}</strong> 
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="row">
+                    <div class="col-12 d-flex justify-content-center">
+                        <div  id="showme" style="display:none">
+                            <img id='spinner_id' src="{{ url_for('static', filename='img/loader.gif') }}" class="center-block"  />
+                        </div>
+                    </div>
+                </div>                 
+                <div class="form-group alignright blur">
+                    <div class = 'row' id = "content_row">             
+                        {% block app_content %}{% endblock %}            
+                    </div> 
+                </div>           
+            </div>
+        </div> 
+        {% endblock %}
+
+        
+        {% block base_scripts %}
+            <script>
+                let cageTable = null
+                let animalTable = null
+                let allAnimalData = null
+                let species = null
+                let breed = null
+                let breedArr = null
+                let breedFood = null
+                let breedFoodArr = null
+                // let breedFoodArr = null
+                const spinner = document.getElementById('showme')
+                const blurring = document.getElementsByClassName('blur')
+                try {                    
+                    species = document.getElementById('species')
+                    breed = document.getElementById('breed')
+                    breedArr = Array.from(breed)
+                    breedFood = document.getElementById('breed_food')
+                    breedFoodArr = Array.from(breedFood)
+                } catch (error) {
+                    console.log(error);
+                }
+
+                const destroyCageTable = () =>{
+                    
+                    if(cageTable && cageTable.rootElement){
+                        try {
+                            cageTable.destroy()
+                        } catch (error) {
+                            console.log(error)
+                        }
+                    }
+                }
+                const destroyAnimalTable = () =>{
+                    
+                    if(animalTable && animalTable.rootElement){
+                        try {
+                            animalTable.destroy()
+                        } catch (error) {
+                            console.log(error)
+                        }
+                    }
+                }
+
+                const filterBreedBySpecies = () =>{                   
+                    startSpinner()
+                    fetch(`/api/breeds/${species.value}`).then(function(response){                
+                        response.json().then(function(data){
+                            
+                            
+                            hideAll(breedArr)
+                            data.slice().reverse().forEach(breed =>{
+                                breedArr.forEach(x => {                        
+                                    if(parseInt(x.value) === parseInt(breed.id)){                           
+                                        x.style.display = 'block'
+                                        x.selected = true
+                                    }                        
+                                })          
+                                breedFoodArr.forEach(x => {                        
+                                    if(parseInt(x.value) === parseInt(breed.id)){                           
+                                        x.style.display = 'block'
+                                        x.selected = true
+                                    }                        
+                                })          
+
+                            }) 
+                            const selectedBreedId = getSelected(breedArr)
+                            destroyCageTable()
+                            filterHabitatsByBreed(selectedBreedId)                     
+                        });
+                    })
+                    .catch(error => console.log('in error',error) );         
+                }
+
+                const filterHabitatsByBreed = (breedId, currCageId) =>{
+                    
+                    fetch(`/api/cages?breed_id=${breedId}`).then(function(response){                
+                        response.json().then(function(data){
+                            // console.log(data)
+                            if(data.length){
+                                
+                                const result = data.map(obj => ({
+                                    
+                                    id: obj.inventory_id,
+                                    length: Math.round(obj.length),
+                                    width: Math.round(obj.width),
+                                    height: Math.round(obj.height),
+                                    airVolume:Math.round(obj.habitat.min_air_volume),
+                                    waterVolume:Math.round(obj.habitat.min_water_volume),
+                                    surfaceArea:Math.round(obj.habitat.min_surface_area),
+                                    minTemp:Math.round(obj.habitat.min_temperature),
+                                    maxTemp:Math.round(obj.habitat.max_temperature),                           
+                                    
+                                }));
+                                const col_names = [
+                                    'Id', 
+                                    'Length (m)', 
+                                    'Width (m)', 
+                                    'Height (m)', 
+                                    'Air Volume (m3)', 
+                                    'Water Volume (m3)',
+                                    'Surface Area (m2)',
+                                    'Min Temp (C)',
+                                    'Max Temp (C)',
+                                    
+                                ] 
+                                
+                                cageTable = tableFactory('cage_table', result, col_names)   
+                                Handsontable.hooks.add(
+                                    'beforeSetRangeStart', 
+                                    handleCageClick,                            
+                                    cageTable
+                                );                                      
+                            }
+                            if (currCageId){
+                                const rowHighlightColor = "#caafdb"
+                               
+                                for (let j = 0; j < cageTable.countRows(); j++) {                    
+                                    const innerCell = cageTable.getDataAtCell(j,cageTable.propToCol('id'));
+                                    if(innerCell !== currCageId){
+                                        continue
+                                    } 
+                                    for (var i = 0; i < cageTable.countCols(); i++) {
+                                        
+                                        try{
+                                            var cell = cageTable.getCell(j,i); 
+                                            cell.style.background = rowHighlightColor;                                       
+                                            cell.style.color = 'black';
+
+                                        }catch(e){
+                                            // console.log(e);
+                                        }
+                                    }    
+                                }
+
+                               
+                            }
+                            stopSpinner()
+                        });
+                    })
+                    .catch(error => console.log('in error',error) );
+                }
+
+                const allAnimals = () =>{
+                    startSpinner()
+                    fetch(`/api/foods`).then(function(response){
+                        response.json().then(function(food_data){                            
+                            foods = food_data.map(x => x.food_name)                             
+                            fetch(`/api/occupancy`).then(function(response){
+                                response.json().then(function(occups_data){                      
+                                    let occups = occups_data.map(x => ({
+                                        id:x.animal_id,
+                                        cage_id:x.cages.inventory_id,
+                                        occuped_at:x.occuped_at
+                                    }))                            
+                                    fetch(`/api/animals`).then(function(response){                
+                                        response.json().then(function(data){
+                                            // console.log(data)
+                                            // console.log('occups',occups.find(element => element.id === 1).cage_id)
+                                            if(data.length){ 
+                                                allAnimalData = data                               
+                                                const result = data.map(obj => ({
+                                                    
+                                                    id: obj.personal_id,
+                                                    name: obj.animal_name,                                    
+                                                    breed: obj.breed.breed_name,
+                                                    weight: Math.round(obj.weight),
+                                                    food:obj.breed.breed_foods.map(item => item.food_name).join(),
+                                                    add_food:obj.additional_foods.length === 0 ? '' : obj.additional_foods[0].food_name,
+                                                    cage_id : occups.find(element => element.id === obj.id) ? 
+                                                        occups.find(element => element.id === obj.id).cage_id : 
+                                                        'unsettled',
+                                                    settlement_date:occups.find(element => element.id === obj.id) ? 
+                                                        occups.find(element => element.id === obj.id).occuped_at : 
+                                                        ''
+                                                                             
+                                                    
+                                                }));
+                                                const col_names = [
+                                                    "Id", "Name", "Breed","Weight (kg)","Food","Additional food","Cage id" ,"Settlement date"                                           
+                                                ] 
+                                                
+                                                animalTable = tableFactory(
+                                                    'animal_table', 
+                                                    result,
+                                                    col_names,                                                   
+                                                    )   
+                                                Handsontable.hooks.add(
+                                                    'beforeSetRangeStart', 
+                                                    handleAnimalClick,                            
+                                                    animalTable
+                                                );                                                                               
+                                            }
+                                            stopSpinner()
+                                        });
+                                    })
+                                    .catch(error => console.log('in error',error) );
+                                });
+                            })
+                            .catch(error => console.log('in error',error) );
+                        });
+                    })
+                    .catch(error => console.log('in error',error) );
+                   
+                }
+                
+                const startSpinner = () =>{
+                    spinner.style.display = "block";
+                    blurring[0].style.filter = "blur(8px)";
+                }
+                
+                const stopSpinner = () =>{
+                    blurring[0].style.filter = "";
+                    spinner.style.display = 'none';
+                }
+
+                const hideAll = (iterable) => {
+                    iterable.forEach(element => {
+                        element.style =  "display:none"
+                    });
+                }
+
+                const getSelected = (iterable) => {
+                    for(let i = 0; i < iterable.length; i++){
+                        if(iterable[i].selected === true){
+                            return iterable[i].value                            
+                        } 
+                    } 
+                }
+
+                const getVisible = (iterable) => {
+                    for(let i = 0; i < iterable.length; i++){
+                        if(iterable[i].style["display"] === "block"){
+                            return iterable[i].value                            
+                        } 
+                    } 
+                }
+                function clearLicenseInfo(){                    
+                    const singleLic = document.getElementById("hot-display-license-info");                    
+                    if(singleLic !== null){
+                        singleLic.innerHTML=''
+                    }                    
+                    const licenseInfo = document.querySelectorAll("[id='hot-display-license-info']");                   
+                    if(licenseInfo !== null){
+                        for(let i = 0; i < licenseInfo.length; i++){ 
+                            
+                            licenseInfo[i].style.display='none'
+                        }                        
+                    }
+                }  
+
+            </script>
+        
+            
+            <!-- Optional JavaScript -->
+            {{ bootstrap.load_js() }}                
+            {% block user_script %}{% endblock %}          
+        {% endblock %} 
+        
+    </body>
+</html>
