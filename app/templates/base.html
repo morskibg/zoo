@@ -193,6 +193,10 @@
                                 const result = data.map(obj => ({
                                     
                                     id: obj.inventory_id,
+                                    energy: obj.energy,
+                                    animals_qty: obj.animals_count,
+                                    min_predator_weight: obj.min_predator_weight,
+                                    max_predator_weight: obj.max_predator_weight,
                                     length: Math.round(obj.length),
                                     width: Math.round(obj.width),
                                     height: Math.round(obj.height),
@@ -204,7 +208,11 @@
                                     
                                 }));
                                 const col_names = [
-                                    'Id', 
+                                    'Id',
+                                    'Available energy',
+                                    'Animals in cage',
+                                    'Predators min weight', 
+                                    'Predators max weight', 
                                     'Length (m)', 
                                     'Width (m)', 
                                     'Height (m)', 

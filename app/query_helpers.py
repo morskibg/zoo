@@ -50,39 +50,48 @@ def get_remaining_cage_env_capacity(cage):
         module_logger.error(f'{ex}')
         return None
     return remaing_capacity                
-    
 
-def get_remainig_cage_food_energy(cage, is_all_cages_empty=False):        
-    if is_all_cages_empty:    
-        remaing_food_energy = (
-            db_session
-            .query(                                                  
-                (func.sum(Food.energy*CageMeal.cage_meal_qty)).label('remaing_food_energy'),                                    
-            )
-            .select_from(CageMeal)
-            .join(Food, Food.id ==  CageMeal.food_id)                      
-            .filter(CageMeal.cage_id == cage.id)
-            .all() 
+def get_initial_cage_energy(cage_id):
+    energy = (
+        db_session
+        .query(                                                  
+            (func.sum(Food.energy*CageMeal.cage_meal_qty)).label('cage_food_energy'),                                    
         )
+        .select_from(CageMeal)
+        .join(Food, Food.id ==  CageMeal.food_id)                      
+        .filter(CageMeal.cage_id == cage_id)
+        .all() 
+    )
+    return energy[0][0]
+
+def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_id):
+    if curr_time is None:
+        curr_time = dt.datetime.utcnow()
     else:
-        remaing_food_energy = (
-            db_session
-            .query(                                                  
-                (func.sum(Food.energy*CageMeal.cage_meal_qty) - Breed.min_food_energy_intake).label('remaing_food_energy'),                                    
-            )
-            .select_from(CageMeal)
-            .join(Food, Food.id ==  CageMeal.food_id)
-            .join(Animal, Animal.id == Occupancy.animal_id)
-            .join(Breed, Breed.id == Animal.breed_id)               
-            .filter(Occupancy.cage_id == cage.id)
-            .filter(CageMeal.cage_id == cage.id)
-            .all() 
-        )
+        curr_time = convert_date_to_utc_with_hours(time_zone, curr_time)
 
-    try:
-        remaing_food_energy = remaing_food_energy[0][0]
-    except (TypeError, IndexError) as ex:
-        module_logger.error(f'{ex}')
-        return None
-    return remaing_food_energy
+    cage_animal_data = (
+        db_session
+        .query(                                                  
+            (func.sum(Breed.min_food_energy_intake)).label('total_food_energy_req'),
+            func.count(Occupancy.animal_id).label('animals_count'), 
+            Breed.is_predator.label('is_predator'), 
+            func.max(Animal.weight).label('max_weight'),                                    
+            func.min(Animal.weight).label('min_weight')                                    
+        )
+        .join(Animal, Animal.id == Occupancy.animal_id)
+        .join(Breed, Breed.id == Animal.breed_id)       
+        .filter(
+                Occupancy.occuped_at < curr_time, 
+                Occupancy.left_at == None, 
+                Occupancy.cage_id == cage_id,
+            )
+        .all() 
+    )
+
+    return cage_animal_data
+
+
+
+
                                

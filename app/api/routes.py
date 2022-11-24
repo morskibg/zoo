@@ -1,10 +1,12 @@
 from flask import request, jsonify, redirect, url_for
 
+
 from .. models import *
 from .. helpers import parse_urlargs, is_suitable_cage_for_breed
 from .. query_helpers import (get_occuped_cages_by_time,
                              get_remaining_cage_env_capacity, 
-                             get_remainig_cage_food_energy,
+                             get_cage_animal_data,
+                             get_initial_cage_energy,
                              )
 from . import bp
 
@@ -62,15 +64,19 @@ def cages_get(arg = None):
     if query_dict:
         
         if 'breed_id' in query_dict:
-            ocuped_cages = get_occuped_cages_by_time()
-            is_all_cages_empty = not bool(ocuped_cages)
+            # ocuped_cages = get_occuped_cages_by_time()
+            
             # cages = cages if is_all_cages_empty else ocuped_cages
             selected_breed = Breed.query.get(int(query_dict['breed_id']))
             cages = [x for x in cages if is_suitable_cage_for_breed(selected_breed, x)]
             suitable_cages = []
             
             for cage in cages: 
+                max_weight = 0
+                min_weight = 0
                 remaing_capacity = get_remaining_cage_env_capacity(cage)
+                initial_cage_energy = get_initial_cage_energy(cage.id)
+                cage_animals_data = get_cage_animal_data(cage_id = cage.id)
                 print(f'{cage.id=}')               
                 print(f'{remaing_capacity=}')               
                 if remaing_capacity is None:
@@ -89,11 +95,25 @@ def cages_get(arg = None):
                 )               
                 if is_become_overwhelmed:
                     continue 
-                remaing_food_energy = get_remainig_cage_food_energy(cage, is_all_cages_empty)
+                remaing_food_energy = (initial_cage_energy 
+                    if cage_animals_data[0].total_food_energy_req is None 
+                    else float(initial_cage_energy) - float(cage_animals_data[0].total_food_energy_req))
                 print(f'{remaing_food_energy=}')
-                if remaing_food_energy is not None:                   
-                    if remaing_food_energy <= 0:
-                        continue 
+                                   
+                if remaing_food_energy <= 0:
+                    continue 
+                animals_count = ( 0 
+                    if cage_animals_data[0].animals_count is None 
+                    else cage_animals_data[0].animals_count)
+                is_predator = bool(cage_animals_data[0].is_predator)
+                cage.energy = remaing_food_energy
+                cage.animals_count = animals_count
+                cage.is_predator = is_predator
+                if is_predator:
+                    min_weight = float(cage_animals_data[0].min_weight) 
+                    max_weight = float(cage_animals_data[0].max_weight)
+                cage.max_predator_weight = max_weight 
+                cage.min_predator_weight = min_weight  
                 suitable_cages.append(cage)
 
         elif 'animal_id' in query_dict: 

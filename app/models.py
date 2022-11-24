@@ -12,8 +12,7 @@ from flask import flash
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from marshmallow_sqlalchemy import  auto_field
-
-
+from marshmallow import fields
 
 from app import login, ma
 from .database import Base, db_session
@@ -361,6 +360,7 @@ class CageSchema(ma.SQLAlchemySchema):
         model = Cage
         include_relationships = True
         load_instance = True
+        
     
     id = auto_field()    
     inventory_id = auto_field()
@@ -370,7 +370,37 @@ class CageSchema(ma.SQLAlchemySchema):
     cage_notes = auto_field()
     inserted_at = auto_field()
     updated_at = auto_field() 
-    habitat = ma.Nested(HabitatSchema) 
+    habitat = ma.Nested(HabitatSchema)
+    energy = fields.Method("get_energy")
+    animals_count = fields.Method("get_animals_count")
+    max_predator_weight = fields.Method("get_max_predator_weight")
+    min_predator_weight = fields.Method("get_min_predator_weight")
+    is_predator = fields.Method("get_is_predator")
+
+    def get_energy(self, obj):
+        if hasattr(obj, "energy"):
+            return obj.energy
+        return None
+
+    def get_animals_count(self, obj):
+        if hasattr(obj, "animals_count"):
+            return obj.animals_count
+        return None
+
+    def get_max_predator_weight(self, obj):
+        if hasattr(obj, "max_predator_weight"):
+            return obj.max_predator_weight
+        return None
+
+    def get_min_predator_weight(self, obj):
+        if hasattr(obj, "min_predator_weight"):
+            return obj.min_predator_weight
+        return None
+
+    def get_is_predator(self, obj):
+        if hasattr(obj, "is_predator"):
+            return obj.is_predator
+        return None
     
 class MovementSchema(ma.SQLAlchemySchema):
     class Meta:
