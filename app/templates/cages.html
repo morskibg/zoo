@@ -10,9 +10,12 @@
         <br>
         <hr>
         <br>
-        
+        <label for="cage_table" id="cage-table-lbl">Available cages for selected breed</label> 
+        <div id="cage_table" class="hot handsontable htRowHeaders htColumnHeaders" style="height: auto; overflow: auto; width: auto;" ></div>
 
-        {{ wtf.render_form(form) }} 
+        <div id="form-container">            
+            {{ wtf.render_form(form) }}
+        </div>
         <input class="btn  btn-primary w-100" type="submit" value="Update" id="save-cage-btn" disabled="true"  onclick="submit()" > 
         <br>
         <br>

@@ -319,16 +319,39 @@ class Habitat(BaseModel):
 class Cage(BaseModel):
     __tablename__ = 'cage'
     id = Column(Integer, primary_key = True)
+    cage_name = Column(String(32), nullable = True)
     habitat_id = Column(Integer, ForeignKey('habitat.id', ondelete='CASCADE',onupdate = 'CASCADE'))
     inventory_id = Column(String(32), unique = True, default = uuid.uuid4().hex)
     width = Column(Float(6,2), nullable = False)
     length = Column(Float(6,2), nullable = False)
     height = Column(Float(6,2), nullable = False)
+    curr_temperature = Column(Float(4,2), nullable = False)
     cage_notes = Column(Text, nullable = True)
     inserted_at =Column(DateTime, default=dt.datetime.utcnow)
     updated_at =Column(DateTime, default=dt.datetime.utcnow)
     habitat = relationship("Habitat", back_populates="cages")
     occups = relationship("Occupancy", back_populates="cages")
+
+    @validates(
+        'width','cage_name',
+        'length','height','curr_temperature',
+        'cage_notes'
+        )
+    def validate_cage(self, key, field):           
+        if (field is None and key in ['cage_notes','cage_name']):
+            return field
+        if key == 'cage_notes':
+            validate_text_length(field, 32)
+        elif key == 'cage_name':
+            validate_text_length(field, 512)
+        elif key in ['length','width','height']:
+            validate_non_negative_real_number(field) 
+        elif key == 'curr_temperature':
+            validate_real_number(field)
+        else:
+            validate_boolean(field) 
+        return field
+
        
 
 class FoodSchema(ma.SQLAlchemySchema):
@@ -366,10 +389,12 @@ class CageSchema(ma.SQLAlchemySchema):
         
     
     id = auto_field()    
+    cage_name = auto_field()    
     inventory_id = auto_field()
     width = auto_field()
     length = auto_field()
     height = auto_field()
+    curr_temperature = auto_field()
     cage_notes = auto_field()
     inserted_at = auto_field()
     updated_at = auto_field() 

@@ -66,6 +66,7 @@
                                     </a>
                                     <ul class="dropdown-menu">                                            
                                         <li><a class="dropdown-item" href="{{ url_for('main.cages') }}">Add</a></li>                                                                           
+                                        <li><a class="dropdown-item" href="{{ url_for('main.maintanance') }}">Maintanance</a></li>                                                                           
                                                                                                                   
                                     </ul>
 
@@ -137,12 +138,12 @@
                     species = document.getElementById('species')
                     breed = document.getElementById('breed')
                     breedFood = document.getElementById('breed_food')
-                    if(breed !== null){
-                        breedArr = Array.from(breed)
-                    }
-                    if(breedFood !== null){
-                        breedFoodArr = Array.from(breedFood)
-                    }
+                    // if(breed !== null){
+                    //     breedArr = Array.from(breed)
+                    // }
+                    // if(breedFood !== null){
+                    //     breedFoodArr = Array.from(breedFood)
+                    // }
                     
                 } catch (error) {
                     console.log(error);
@@ -169,8 +170,11 @@
                     }
                 }
 
-                const filterBreedBySpecies = (animalWeight = null) =>{                   
+                const filterBreedBySpecies = (animalWeight = null) =>{ 
+                    console.log('in filterBreedBySpecies');                  
                     startSpinner()
+                    breedArr = Array.from(breed)
+                    breedFoodArr = Array.from(breedFood)
                     fetch(`/api/breeds/${species.value}`).then(function(response){                
                         response.json().then(function(data){
                             
@@ -214,6 +218,7 @@
                                     id: obj.inventory_id,
                                     is_safe: obj.is_safe === 1?'True':'False',
                                     energy: obj.energy,
+                                    curr_temp: Math.round(obj.curr_temperature),
                                     animals_qty: obj.animals_count,
                                     min_predator_weight: obj.min_predator_weight,
                                     max_predator_weight: obj.max_predator_weight,
@@ -231,6 +236,7 @@
                                     'Id',
                                     'Is safe to add',
                                     'Available energy',
+                                    'Current temperature',
                                     'Animals in cage',
                                     'Predators min weight', 
                                     'Predators max weight', 

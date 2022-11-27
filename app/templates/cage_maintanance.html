@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% import 'bootstrap5/form.html' as wtf %}
+
+
+{% block app_content %}
+             
+    <div class='col-md-12'>  
+        <h1>{{header|safe}}</h1>        
+        <hr>         
+       
+        <label for="cage_table" id="cage-table-lbl">Available cages in the Zoo</label> 
+        <div id="cage_table" class="hot handsontable htRowHeaders htColumnHeaders" style="height: auto; overflow: auto; width: auto;" ></div>
+        <br>
+      
+        <br>
+        <hr>
+        <br>
+        
+        <input class="btn  btn-primary w-100" type="submit" value="Update" id="update-cage-btn" disabled="true"  onclick="submit()" > 
+        <br>
+        <br>
+        
+    
+    </div> 
+
+    
+{% endblock %}
+{% block user_script %}
+    <script  src="{{ url_for('static', filename='js/table.js') }}"></script>
+    <script>  
+            
+        const updateBtn = document.getElementById('update-cage-btn')
+        updateBtn.disabled = true 
+        
+        
+        
+        
+        const getAllCages = () =>{
+            fetch(`/api/cages`).then(function(response){                
+                response.json().then(function(data){
+                    if(data.length){
+                        const result = data.map(obj => ({
+                                    
+                            id: obj.inventory_id,                                    
+                            energy: obj.energy | 0,
+                            curr_temp: Math.round(obj.curr_temperature),
+                            animals_qty: obj.animals_count,
+                            min_predator_weight: obj.min_predator_weight,
+                            max_predator_weight: obj.max_predator_weight,
+                            length: Math.round(obj.length),
+                            width: Math.round(obj.width),
+                            height: Math.round(obj.height),
+                            airVolume:Math.round(obj.habitat.min_air_volume),
+                            waterVolume:Math.round(obj.habitat.min_water_volume),
+                            surfaceArea:Math.round(obj.habitat.min_surface_area),
+                            minTemp:Math.round(obj.habitat.min_temperature),
+                            maxTemp:Math.round(obj.habitat.max_temperature),                           
+                            
+                        }));
+                        const col_names = [
+                            'Id',                                    
+                            'Available energy',
+                            'Current temperature',
+                            'Animals in cage',
+                            'Predators min weight', 
+                            'Predators max weight', 
+                            'Length (m)', 
+                            'Width (m)', 
+                            'Height (m)', 
+                            'Air Volume (m3)', 
+                            'Water Volume (m3)',
+                            'Surface Area (m2)',
+                            'Min Temp (C)',
+                            'Max Temp (C)',
+                            
+                        ] 
+                        
+                        cageTable = tableFactory('cage_table', result, col_names)   
+                        Handsontable.hooks.add(
+                            'beforeSetRangeStart', 
+                            handleAllCageClick,                            
+                            cageTable
+                        ); 
+                    }
+                });
+            })
+            .catch(error => console.log('in error',error) );
+        }
+        
+        getAllCages()
+        
+        const handleAllCageClick = (coordinates) => {
+            console.log(cageTable.getCell(coordinates.row, 0).innerText)
+            // document.getElementById('selected_cage_id').value = cageTable.getCell(coordinates.row, 0).innerText
+            
+        }
+
+        const submit = () =>{
+            console.log('submit clicked')
+            document.getElementById('wtf_submit').click()
+        }
+        
+       
+    </script>
+
+{% endblock %}

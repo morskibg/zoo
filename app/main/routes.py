@@ -110,7 +110,7 @@ def animals():
 
     return render_template('animals.html', title='Animals', form=form, header='Add animal to the Zoo ')
 
-@bp.route('/animal>',  methods=['GET','POST'])
+@bp.route('/animal',  methods=['GET','POST'])
 @bp.route('/animal/<string:personal_id>',  methods=['GET', 'POST'])
 @login_required
 def animal_edit():
@@ -183,3 +183,11 @@ def cages():
 
 
     return render_template('cages.html', title='Cages', form=form, header="Add cage to the Zoo ")
+
+@bp.route('/cages/maintanance',  methods=['GET', 'POST'])
+@bp.route('/cages/maintanance/<string:id>',  methods=['GET', 'POST'])
+@login_required
+def maintanance(id = None):
+    
+
+    return render_template('cage_maintanance.html', title='Cages maintanance',  header="Adjust cage enviroment ")

@@ -134,6 +134,8 @@ def seed_db():
         cage = Cage(
             habitat_id = cage_habitat.id,
             inventory_id = uuid.uuid4().hex,
+            cage_name = None,
+            curr_temperature = random.randrange(int(curr_breed_habitat.min_temperature), int(curr_breed_habitat.max_temperature)),  
             width = width,
             length = length,
             height = height,

@@ -67,12 +67,13 @@ def cages_get(arg = None):
     cage_schema = CageSchema()   
     cages = Cage.query.all()    
     query_dict = parse_urlargs(request.url)
+    suitable_cages = []
     if query_dict:
         
         if 'breed_id' in query_dict:
             selected_breed = Breed.query.get(int(query_dict['breed_id']))
             cages = [x for x in cages if is_suitable_cage_for_breed(selected_breed, x)]
-            suitable_cages = []
+            
             animal_weight = None if query_dict['animal_weight'] == 'null' else float(query_dict['animal_weight'])
             print(f'{animal_weight=}')
             for cage in cages: 
@@ -136,7 +137,35 @@ def cages_get(arg = None):
                 suitable_cages.append(cage)
 
         elif 'animal_id' in query_dict: 
-            suitable_cages = get_occuped_cages_by_time(animal_id = query_dict['animal_id'])      
+            suitable_cages = get_occuped_cages_by_time(animal_id = query_dict['animal_id'])   
+    else:
+        for cage in cages:
+            max_weight = 0
+            min_weight = 0
+            remaing_capacity = get_remaining_cage_env_capacity(cage)
+            initial_cage_energy = get_initial_cage_energy(cage.id)
+            cage_animals_data = get_cage_animal_data(cage_id = cage.id)
+            if cage_animals_data:
+                cage_animals_data_df = pd.DataFrame.from_records(cage_animals_data, columns = cage_animals_data[0].keys())
+                cage_animals_data_df['weight'] = cage_animals_data_df['weight'].astype(float)
+            remaing_food_energy = (initial_cage_energy 
+                if not cage_animals_data 
+                else initial_cage_energy - float(cage_animals_data_df['food_energy_req'].sum()))
+            # print(f'{remaing_food_energy=}')    
+            animals_count = ( 0 
+                if not cage_animals_data 
+                else cage_animals_data_df.shape[0])
+            has_predator = False if not cage_animals_data else cage_animals_data_df['is_predator'].any()
+            cage.energy = remaing_food_energy
+            cage.animals_count = animals_count
+            cage.has_predator = int(has_predator)
+            if has_predator:
+                min_weight = float(cage_animals_data_df['weight'].min()) 
+                max_weight = float(cage_animals_data_df['weight'].max())
+            cage.max_predator_weight = max_weight 
+            cage.min_predator_weight = min_weight             
+            
+            suitable_cages.append(cage)                 
     try:
         return jsonify(cage_schema.dump(suitable_cages, many=len(suitable_cages)))
     except:            
