@@ -8,7 +8,7 @@ from sqlalchemy.exc import  PendingRollbackError
 from .. database import init_db
 from .. models import User, Animal, Breed, Cage, Occupancy
 from .. logger import get_logger
-from . forms import LoginForm, RegistrationForm, AnimalForm
+from . forms import LoginForm, RegistrationForm, AnimalForm, CageForm
 from . import bp
 
 module_logger = get_logger(__name__)
@@ -156,3 +156,30 @@ def animal_edit():
 
     return render_template('animal_edit.html', title='Modify animal', form=form, header="Edit existing animal's data ")
 
+@bp.route('/cages',  methods=['GET', 'POST'])
+@login_required
+def cages():
+    form = CageForm()
+    if form.validate_on_submit():
+        new_cage_data = {
+            'width': form.width.data,
+            'length': form.width.data,
+            'height': form.width.data,
+            'cage_notes': form.width.data,
+        }
+        try:
+            new_cage = Cage(**new_cage_data)
+        except AssertionError as ex:
+            module_logger.error(f'Error on new cage creation.')
+            flash(str(ex), 'danger')
+            redirect(url_for('.cages'))
+        new_cage.habitat_id = (form.habitats.data.id)
+        try:
+            new_cage.save()
+        except (ValueError, PendingRollbackError, Exception) as ex:
+            flash(str(ex),'danger')
+        finally:
+            return redirect(url_for('.index'))
+
+
+    return render_template('cages.html', title='Cages', form=form, header="Add cage to the Zoo ")

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% import 'bootstrap5/form.html' as wtf %}
+
+
+{% block app_content %}
+             
+    <div class='col-md-12'>  
+        <h1>{{header|safe}}</h1> 
+        <br>
+        <hr>
+        <br>
+        
+
+        {{ wtf.render_form(form) }} 
+        <input class="btn  btn-primary w-100" type="submit" value="Update" id="save-cage-btn" disabled="true"  onclick="submit()" > 
+        <br>
+        <br>
+    </div> 
+    
+{% endblock %}
+{% block user_script %}
+    <script>
+        document.getElementById('height').onchange = () =>{
+            
+            document.getElementById('save-cage-btn').disabled = false
+        }
+        const submit = () =>{
+            console.log('submit clicked')
+                   
+            document.getElementById('wtf_submit').click()
+        }
+
+    </script>       
+
+
+{% endblock %}

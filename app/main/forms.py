@@ -56,4 +56,15 @@ class AnimalForm(FlaskForm):
     selected_cage_id = HiddenField("selected_cage_id")
     selected_animal_id = HiddenField("selected_animal_id")
     wtf_submit = SubmitField('Save', render_kw={'hidden': True})
+class CageForm(FlaskForm):
+
+    habitats = QuerySelectField('Habitats', query_factory=lambda: Habitat.query.all(), 
+        allow_blank=False, get_label=Habitat.__str__, validators=[DataRequired()], render_kw={'size': 1})   
+    width = FloatField('Width', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Width.')])
+    length = FloatField('Length', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Length.')])
+    height = FloatField('Height', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Height.')])
+    
+    notes = TextAreaField('Notes', validators=[Optional()])
+
+    wtf_submit = SubmitField('Save', render_kw={'hidden': True})
 

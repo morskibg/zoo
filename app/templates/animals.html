@@ -26,19 +26,35 @@
 {% block user_script %}
     <script  src="{{ url_for('static', filename='js/table.js') }}"></script>
     <script>        
+        const currAnimalWeight = document.getElementById('weight')
+        currAnimalWeight.value = ''
 
         const handleCageClick = (coordinates) => {
-            console.log(cageTable.getCell(coordinates.row, 0).innerText)            
+            // console.log('Entering click!');
+            // console.log(cageTable.getCell(coordinates.row, 0).innerText)            
             document.getElementById('save-animal-btn').disabled = false
-            document.getElementById('selected_cage_id').value = cageTable.getCell(coordinates.row, 0).innerText   
+            document.getElementById('selected_cage_id').value = cageTable.getCell(coordinates.row, 0).innerText 
+            
         }
 
         filterBreedBySpecies()
 
         species.onchange = ()=>{
             
-            filterBreedBySpecies()
+            if(!parseFloat(currAnimalWeight.value)){                
+                currAnimalWeight.value = ''
+            }else{
+                filterBreedBySpecies(animalWeight = currAnimalWeight.value)
+            }
 
+        }
+
+        currAnimalWeight.onclick = ()=>{            
+            if(!parseFloat(currAnimalWeight.value)){                
+                currAnimalWeight.value = ''
+            }else{
+                filterBreedBySpecies(animalWeight = currAnimalWeight.value)
+            }
         }
 
         const submit = () =>{

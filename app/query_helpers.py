@@ -72,12 +72,11 @@ def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_i
 
     cage_animal_data = (
         db_session
-        .query(                                                  
-            (func.sum(Breed.min_food_energy_intake)).label('total_food_energy_req'),
-            func.count(Occupancy.animal_id).label('animals_count'), 
+        .query( 
+            Occupancy.animal_id,                                                 
+            Breed.min_food_energy_intake.label('food_energy_req'),             
             Breed.is_predator.label('is_predator'), 
-            func.max(Animal.weight).label('max_weight'),                                    
-            func.min(Animal.weight).label('min_weight')                                    
+            Animal.weight.label('weight'),                                   
         )
         .join(Animal, Animal.id == Occupancy.animal_id)
         .join(Breed, Breed.id == Animal.breed_id)       
@@ -88,9 +87,26 @@ def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_i
             )
         .all() 
     )
+    # cage_animal_data = (
+    #     db_session
+    #     .query(                                                  
+    #         (func.sum(Breed.min_food_energy_intake)).label('total_food_energy_req'),
+    #         func.count(Occupancy.animal_id).label('animals_count'), 
+    #         Breed.is_predator.label('is_predator'), 
+    #         func.max(Animal.weight).label('max_weight'),                                    
+    #         func.min(Animal.weight).label('min_weight')                                    
+    #     )
+    #     .join(Animal, Animal.id == Occupancy.animal_id)
+    #     .join(Breed, Breed.id == Animal.breed_id)       
+    #     .filter(
+    #             Occupancy.occuped_at < curr_time, 
+    #             Occupancy.left_at == None, 
+    #             Occupancy.cage_id == cage_id,
+    #         )
+    #     .all() 
+    # )
 
     return cage_animal_data
-
 
 
 

@@ -1,6 +1,7 @@
 
 from urllib import parse
 import pandas as pd
+import numpy as np
 import datetime as dt
 import pytz
 
@@ -62,10 +63,14 @@ def convert_date_to_utc_with_hours(dt_str, time_zone = 'Europe/Sofia', t_format=
             module_logger.error(f'Error on parsing {dt_str} with {t_format} format.')            
             module_logger.error(f'{ex}')
             return None 
-
     
 
 
-#   attr_arr =['min_air_volume','min_water_volume','min_surface_area',
-#                         'min_temperature','max_temperature','min_humidity',
-#                         'max_humidity','min_uv_index','max_uv_index'] 
+def is_safe_to_add_animal_to_cage(is_predator_in_cage, weight_in_cage, is_predator, weight):
+    if not is_predator_in_cage and not is_predator:
+        return True
+    if not is_predator_in_cage and is_predator:
+        return False
+    if is_predator_in_cage or is_predator:
+        return abs(weight_in_cage - weight) > (min(weight_in_cage , weight)) * 10
+    

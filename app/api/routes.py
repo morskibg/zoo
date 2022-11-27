@@ -1,12 +1,17 @@
+import pandas as pd
 from flask import request, jsonify, redirect, url_for
 
 
 from .. models import *
-from .. helpers import parse_urlargs, is_suitable_cage_for_breed
+from .. helpers import (parse_urlargs, 
+                        is_suitable_cage_for_breed, 
+                        is_safe_to_add_animal_to_cage)
+
 from .. query_helpers import (get_occuped_cages_by_time,
                              get_remaining_cage_env_capacity, 
                              get_cage_animal_data,
                              get_initial_cage_energy,
+                             
                              )
 from . import bp
 
@@ -19,6 +24,7 @@ def animals(personal_id = None):
     query_dict = parse_urlargs(request.url)
     if query_dict:
         pass
+
     else:
         animals = (Animal.query.all() 
             if personal_id is None 
@@ -64,21 +70,19 @@ def cages_get(arg = None):
     if query_dict:
         
         if 'breed_id' in query_dict:
-            # ocuped_cages = get_occuped_cages_by_time()
-            
-            # cages = cages if is_all_cages_empty else ocuped_cages
             selected_breed = Breed.query.get(int(query_dict['breed_id']))
             cages = [x for x in cages if is_suitable_cage_for_breed(selected_breed, x)]
             suitable_cages = []
-            
+            animal_weight = None if query_dict['animal_weight'] == 'null' else float(query_dict['animal_weight'])
+            print(f'{animal_weight=}')
             for cage in cages: 
                 max_weight = 0
                 min_weight = 0
                 remaing_capacity = get_remaining_cage_env_capacity(cage)
                 initial_cage_energy = get_initial_cage_energy(cage.id)
                 cage_animals_data = get_cage_animal_data(cage_id = cage.id)
-                print(f'{cage.id=}')               
-                print(f'{remaing_capacity=}')               
+                print(f'{cage.inventory_id=}')               
+                # print(f'{remaing_capacity=}')               
                 if remaing_capacity is None:
                     continue   
                 is_become_overwhelmed = any(
@@ -94,26 +98,41 @@ def cages_get(arg = None):
                     )
                 )               
                 if is_become_overwhelmed:
-                    continue 
+                    continue
+                if cage_animals_data:
+                    cage_animals_data_df = pd.DataFrame.from_records(cage_animals_data, columns = cage_animals_data[0].keys())
+                    cage_animals_data_df['weight'] = cage_animals_data_df['weight'].astype(float)
                 remaing_food_energy = (initial_cage_energy 
-                    if cage_animals_data[0].total_food_energy_req is None 
-                    else float(initial_cage_energy) - float(cage_animals_data[0].total_food_energy_req))
-                print(f'{remaing_food_energy=}')
-                                   
+                    if not cage_animals_data 
+                    else initial_cage_energy - float(cage_animals_data_df['food_energy_req'].sum()))
+                # print(f'{remaing_food_energy=}')                                   
                 if remaing_food_energy <= 0:
                     continue 
                 animals_count = ( 0 
-                    if cage_animals_data[0].animals_count is None 
-                    else cage_animals_data[0].animals_count)
-                is_predator = bool(cage_animals_data[0].is_predator)
+                    if not cage_animals_data 
+                    else cage_animals_data_df.shape[0])
+                has_predator = False if not cage_animals_data else cage_animals_data_df['is_predator'].any()
                 cage.energy = remaing_food_energy
                 cage.animals_count = animals_count
-                cage.is_predator = is_predator
-                if is_predator:
-                    min_weight = float(cage_animals_data[0].min_weight) 
-                    max_weight = float(cage_animals_data[0].max_weight)
+                cage.has_predator = int(has_predator)
+                if has_predator:
+                    min_weight = float(cage_animals_data_df['weight'].min()) 
+                    max_weight = float(cage_animals_data_df['weight'].max())
                 cage.max_predator_weight = max_weight 
-                cage.min_predator_weight = min_weight  
+                cage.min_predator_weight = min_weight 
+                
+                if not cage_animals_data or animal_weight is None:
+                    is_safe = True 
+                else:
+                    cage_animals_data_df['is_safe'] = \
+                        cage_animals_data_df.apply(
+                            lambda x: 
+                            is_safe_to_add_animal_to_cage(x['is_predator'], x['weight'], selected_breed.is_predator, animal_weight),
+                            axis = 1
+                        )
+                    is_safe = cage_animals_data_df['is_safe'].all()
+                
+                cage.is_safe = int(is_safe)
                 suitable_cages.append(cage)
 
         elif 'animal_id' in query_dict: 

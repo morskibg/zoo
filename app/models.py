@@ -310,6 +310,9 @@ class Habitat(BaseModel):
         return field
 
     def __str__(self): 
+        return f'<Habitat> with air volume: {round(self.min_air_volume)}, water volume: {round(self.min_water_volume)}, min temp: {round(self.min_temperature)} , max temp: {round(self.max_temperature)}'
+
+    def __repr__(self): 
         return f'<Habitat> with {self.min_surface_area} sq m'
 
 
@@ -375,7 +378,8 @@ class CageSchema(ma.SQLAlchemySchema):
     animals_count = fields.Method("get_animals_count")
     max_predator_weight = fields.Method("get_max_predator_weight")
     min_predator_weight = fields.Method("get_min_predator_weight")
-    is_predator = fields.Method("get_is_predator")
+    has_predator = fields.Method("get_has_predator")
+    is_safe = fields.Method("get_is_safe")
 
     def get_energy(self, obj):
         if hasattr(obj, "energy"):
@@ -397,9 +401,14 @@ class CageSchema(ma.SQLAlchemySchema):
             return obj.min_predator_weight
         return None
 
-    def get_is_predator(self, obj):
-        if hasattr(obj, "is_predator"):
-            return obj.is_predator
+    def get_has_predator(self, obj):
+        if hasattr(obj, "has_predator"):
+            return obj.has_predator
+        return None
+
+    def get_is_safe(self, obj):
+        if hasattr(obj, "is_safe"):
+            return obj.is_safe
         return None
     
 class MovementSchema(ma.SQLAlchemySchema):

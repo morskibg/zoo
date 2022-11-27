@@ -58,7 +58,18 @@
                                         <li><a class="dropdown-item" href="{{ url_for('main.animal_edit') }}">Edit</a></li>                                                                           
                                     </ul>
                                     
-                                </li>                                
+                                    
+                                </li> 
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Cages
+                                    </a>
+                                    <ul class="dropdown-menu">                                            
+                                        <li><a class="dropdown-item" href="{{ url_for('main.cages') }}">Add</a></li>                                                                           
+                                                                                                                  
+                                    </ul>
+
+                                </li>                               
                                 
                                 {% endif %}
                             </ul>
@@ -125,9 +136,14 @@
                 try {                    
                     species = document.getElementById('species')
                     breed = document.getElementById('breed')
-                    breedArr = Array.from(breed)
                     breedFood = document.getElementById('breed_food')
-                    breedFoodArr = Array.from(breedFood)
+                    if(breed !== null){
+                        breedArr = Array.from(breed)
+                    }
+                    if(breedFood !== null){
+                        breedFoodArr = Array.from(breedFood)
+                    }
+                    
                 } catch (error) {
                     console.log(error);
                 }
@@ -153,18 +169,19 @@
                     }
                 }
 
-                const filterBreedBySpecies = () =>{                   
+                const filterBreedBySpecies = (animalWeight = null) =>{                   
                     startSpinner()
                     fetch(`/api/breeds/${species.value}`).then(function(response){                
                         response.json().then(function(data){
                             
-                            
+                            let isPredator = null
                             hideAll(breedArr)
                             data.slice().reverse().forEach(breed =>{
                                 breedArr.forEach(x => {                        
                                     if(parseInt(x.value) === parseInt(breed.id)){                           
                                         x.style.display = 'block'
                                         x.selected = true
+                                        
                                     }                        
                                 })          
                                 breedFoodArr.forEach(x => {                        
@@ -176,23 +193,26 @@
 
                             }) 
                             const selectedBreedId = getSelected(breedArr)
+                            
                             destroyCageTable()
-                            filterHabitatsByBreed(selectedBreedId)                     
+                            console.log('entering cage filtering ', animalWeight);
+                            filterHabitatsByBreed(selectedBreedId, currCageId = null, animalWeight = animalWeight)                     
                         });
                     })
                     .catch(error => console.log('in error',error) );         
                 }
 
-                const filterHabitatsByBreed = (breedId, currCageId) =>{
-                    
-                    fetch(`/api/cages?breed_id=${breedId}`).then(function(response){                
+                const filterHabitatsByBreed = (breedId, currCageId = null, animalWeight = null) =>{
+                   
+                    fetch(`/api/cages?breed_id=${breedId}&animal_weight=${animalWeight}`).then(function(response){                
                         response.json().then(function(data){
-                            // console.log(data)
+                            
                             if(data.length){
-                                
+                                // console.log(data);
                                 const result = data.map(obj => ({
                                     
                                     id: obj.inventory_id,
+                                    is_safe: obj.is_safe === 1?'True':'False',
                                     energy: obj.energy,
                                     animals_qty: obj.animals_count,
                                     min_predator_weight: obj.min_predator_weight,
@@ -209,6 +229,7 @@
                                 }));
                                 const col_names = [
                                     'Id',
+                                    'Is safe to add',
                                     'Available energy',
                                     'Animals in cage',
                                     'Predators min weight', 
