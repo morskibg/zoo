@@ -63,8 +63,18 @@ class CageForm(FlaskForm):
     width = FloatField('Width', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Width.')])
     length = FloatField('Length', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Length.')])
     height = FloatField('Height', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Height.')])
+    curr_temp = FloatField('Current temperature', validators=[DataRequired(),NumberRange(min=-50, max=50, message='Please provide correct temperature.')])
     
     notes = TextAreaField('Notes', validators=[Optional()])
 
     wtf_submit = SubmitField('Save', render_kw={'hidden': True})
 
+class CageMaintForm(FlaskForm):
+
+    curr_temp = FloatField('Current temperature', validators=[DataRequired(),NumberRange(min=-50, max=50, message='Please provide correct temperature.')])
+    additional_food = QuerySelectField('Add Food', query_factory=lambda: Food.query.all(), 
+        allow_blank=True, get_label=Food._get_name, validators=[Optional()], render_kw={'size': 1})
+    food_qty = FloatField('Food qty', validators=[Optional(),NumberRange(min=1, max=500, message='Please provide correct food qty (1-500).')])
+    selected_cage_id = HiddenField("selected_cage_id")
+
+    wtf_submit = SubmitField('Save', render_kw={'hidden': True})

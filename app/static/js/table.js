@@ -46,12 +46,10 @@ const tableFactory = (tableId, tableData, columns,  tableSettings = {}, columnsS
             if(prevSelectedRow[dynamicTableId] !== -1){
                 for (let j = 0; j < hot.countCols(); j++) {                    
                     const innerCell = hot.getCell(prevSelectedRow[dynamicTableId],j);
-                    // console.log('DEB', innerCell)
-                    try {                        
+                    // console.log('DEB', innerCell,hot.countCols())
+                    if(innerCell){                       
                         innerCell.style.background = "#fff"
-                    } catch (error) {
-                        console.log(error);
-                    }
+                    } 
                 }
             }
             // console.log('seeeeelcted ---> ',selectedRow[dynamicTableId], coordinates,prevSelectedRow);

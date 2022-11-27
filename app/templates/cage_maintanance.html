@@ -16,6 +16,9 @@
         <br>
         <hr>
         <br>
+        <div id="form-container">            
+            {{ wtf.render_form(form) }}
+        </div>
         
         <input class="btn  btn-primary w-100" type="submit" value="Update" id="update-cage-btn" disabled="true"  onclick="submit()" > 
         <br>
@@ -32,9 +35,8 @@
             
         const updateBtn = document.getElementById('update-cage-btn')
         updateBtn.disabled = true 
-        
-        
-        
+        const formDiv = document.getElementById('form-container')
+        formDiv.style.display = 'none'              
         
         const getAllCages = () =>{
             fetch(`/api/cages`).then(function(response){                
@@ -92,8 +94,10 @@
         
         const handleAllCageClick = (coordinates) => {
             console.log(cageTable.getCell(coordinates.row, 0).innerText)
-            // document.getElementById('selected_cage_id').value = cageTable.getCell(coordinates.row, 0).innerText
-            
+            document.getElementById('selected_cage_id').value = cageTable.getCell(coordinates.row, 0).innerText
+            document.getElementById('curr_temp').value = cageTable.getCell(coordinates.row, cageTable.propToCol('curr_temp')).innerText
+            formDiv.style.display = 'block'
+            updateBtn.disabled = false
         }
 
         const submit = () =>{

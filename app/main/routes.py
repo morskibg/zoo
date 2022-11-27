@@ -6,9 +6,9 @@ from flask_login import current_user, login_user, logout_user, login_required
 from sqlalchemy.exc import  PendingRollbackError
 
 from .. database import init_db
-from .. models import User, Animal, Breed, Cage, Occupancy
+from .. models import User, Animal, Breed, Cage, Occupancy, Food, CageMeal
 from .. logger import get_logger
-from . forms import LoginForm, RegistrationForm, AnimalForm, CageForm
+from . forms import LoginForm, RegistrationForm, AnimalForm, CageForm, CageMaintForm
 from . import bp
 
 module_logger = get_logger(__name__)
@@ -188,6 +188,34 @@ def cages():
 @bp.route('/cages/maintanance/<string:id>',  methods=['GET', 'POST'])
 @login_required
 def maintanance(id = None):
-    
+    form = CageMaintForm()
+    if form.validate_on_submit():
+        selected_cage = Cage.query.filter(Cage.inventory_id == form.selected_cage_id.data).first()
+        new_temp = float(form.curr_temp.data)
+        new_temp = (new_temp 
+            if new_temp <= float(selected_cage.habitat.max_temperature) 
+            else float(selected_cage.habitat.max_temperature))
+        new_temp = (new_temp 
+            if new_temp >= float(selected_cage.habitat.min_temperature) 
+            else float(selected_cage.habitat.min_temperature))
+        
+        try:
+            selected_cage.update({'curr_temperature':new_temp})
+        except (ValueError, PendingRollbackError, Exception) as ex:
+            flash(str(ex),'danger')
+            return redirect(url_for('.index'))
+        if form.additional_food.data.food_name and form.food_qty.data:
+            curr_food = Food.query.filter(Food.food_name == form.additional_food.data.food_name).first()
+            meal = CageMeal(
+                cage_id = selected_cage.id,
+                food_id = curr_food.id,
+                cage_meal_qty = float(form.food_qty.data)
+            )
+            try:
+                meal.save()
+            except (ValueError, PendingRollbackError, Exception) as ex:
+                flash(str(ex),'danger')
+                return redirect(url_for('.index'))
+        return redirect(url_for('.maintanance'))    
 
-    return render_template('cage_maintanance.html', title='Cages maintanance',  header="Adjust cage enviroment ")
+    return render_template('cage_maintanance.html', title='Cages maintanance', form=form, header="Adjust cage enviroment ")
