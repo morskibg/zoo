@@ -108,6 +108,10 @@ def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_i
 
     return cage_animal_data
 
+def get_cages(cage_id = None):
+    return Cage.query.all() if cage_id is None else Cage.query.filter(Cage.id == cage_id).all()
+    
+
 
 
                                

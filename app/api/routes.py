@@ -63,10 +63,22 @@ def breeds(arg = None):
 
 @bp.route('/cages', methods=['GET'])
 @bp.route('/cages/<string:arg>', methods=['GET']) 
-def cages_get(arg = None): 
-    cage_schema = CageSchema()   
-    cages = Cage.query.all()    
-    query_dict = parse_urlargs(request.url)
+def cages_get(kwarg_dict = None): 
+    cage_schema = CageSchema() 
+    cages = Cage.query.all()
+
+    if kwarg_dict is not None:
+        query_dict = {}
+        if 'cage_id' in kwarg_dict.keys():
+            cages = Cage.query.filter(Cage.id == kwarg_dict['cage_id']).all()  
+        if 'animal_weight' in kwarg_dict.keys():
+            query_dict['animal_weight'] = kwarg_dict['animal_weight']
+        if 'breed_id' in kwarg_dict.keys():
+            query_dict['breed_id'] = kwarg_dict['breed_id']
+
+    else:        
+        query_dict = parse_urlargs(request.url)
+
     suitable_cages = []
     if query_dict:
         
@@ -97,7 +109,8 @@ def cages_get(arg = None):
                             )
                         )
                     )
-                )               
+                )
+                               
                 if is_become_overwhelmed:
                     continue
                 if cage_animals_data:
@@ -139,6 +152,7 @@ def cages_get(arg = None):
         elif 'animal_id' in query_dict: 
             suitable_cages = get_occuped_cages_by_time(animal_id = query_dict['animal_id'])   
     else:
+        
         for cage in cages:
             max_weight = 0
             min_weight = 0

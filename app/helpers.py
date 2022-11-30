@@ -1,9 +1,13 @@
 
+# from typing import TYPE_CHECKING
 from urllib import parse
 import pandas as pd
 import numpy as np
 import datetime as dt
 import pytz
+
+# if TYPE_CHECKING:
+#     from .query_helpers import get_cages 
 
 from .logger import get_logger
 
@@ -74,3 +78,8 @@ def is_safe_to_add_animal_to_cage(is_predator_in_cage, weight_in_cage, is_predat
     if is_predator_in_cage or is_predator:
         return abs(weight_in_cage - weight) > (min(weight_in_cage , weight)) * 10
     
+# def get_suitable_cages_by_breed(breed, * ,animal = None, cage_id = None):
+#     cages = get_cages(cage_id)
+    
+#     cages = [x for x in cages if is_suitable_cage_for_breed(animal.breed, x)]
+

@@ -8,6 +8,7 @@ from sqlalchemy.exc import  PendingRollbackError
 from .. database import init_db
 from .. models import User, Animal, Breed, Cage, Occupancy, Food, CageMeal
 from .. logger import get_logger
+from .. api.routes import cages_get
 from . forms import LoginForm, RegistrationForm, AnimalForm, CageForm, CageMaintForm
 from . import bp
 
@@ -126,7 +127,14 @@ def animal_edit():
         if form.additional_food.data:
             db_animal.additional_foods = [form.additional_food.data]
         if form.selected_cage_id.data:
-            new_selected_cage = Cage.query.filter(Cage.inventory_id == form.selected_cage_id.data).first()
+            db_cage = Cage.query.filter(Cage.inventory_id == form.selected_cage_id.data).first()
+            res = cages_get(
+                {'cage_id':db_cage.id, 'animal_weight':db_animal.weight, 'breed_id':db_animal.breed.id}
+            )
+            if isinstance(res.json,dict):
+                flash(f'Cage with inventory id: {db_cage.inventory_id} can NOT accomodate animal {db_animal.breed.species} named: {db_animal.animal_name}', 'danger')
+                redirect(url_for('.animals'))
+
             now = dt.datetime.utcnow()
             curr_occups = (Occupancy
                 .query
@@ -137,24 +145,33 @@ def animal_edit():
                 )
                 .first()
             )
-            try:
-                curr_occups.update({'left_at':now})
+            if curr_occups is not None:
+                try:         
+                    curr_occups.update({'left_at':now})
+                except (ValueError, PendingRollbackError, Exception) as ex:            
+                    redirect(url_for('.animals'))
+            try:               
                 new_occupancy_record = Occupancy(
                     animal_id = db_animal.id, 
-                    cage_id = new_selected_cage.id 
+                    cage_id = db_cage.id 
                 )
                 new_occupancy_record.save()
             except (ValueError, PendingRollbackError, Exception) as ex:            
                 redirect(url_for('.animals'))
 
         try:
-            db_animal.update(update_dict)
+            db_animal.update(update_dict)            
         except (ValueError, PendingRollbackError, Exception) as ex:            
             redirect(url_for('.animals'))
-        
-        
-
     return render_template('animal_edit.html', title='Modify animal', form=form, header="Edit existing animal's data ")
+
+@bp.route('/animal/maintanance',  methods=['GET','POST'])
+@bp.route('/animal/maintanance/<string:personal_id>',  methods=['GET', 'POST'])
+@login_required
+def animal_maintanance():
+    pass
+
+    return render_template('animal_maintanance.html', title='Animal maintanance', header="Animal maintanance")
 
 @bp.route('/cages',  methods=['GET', 'POST'])
 @login_required

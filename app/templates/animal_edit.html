@@ -57,7 +57,9 @@
             
             destroyCageTable()            
                     
-            addFoodArr = Array.from(document.getElementById('additional_food'))            
+            addFoodArr = Array.from(document.getElementById('additional_food'))
+            breedArr = Array.from(breed) 
+            breedFoodArr = Array.from(breedFood)           
             animalName.value = selectedAnimal.animal_name            
             document.getElementById('selected_animal_id').value = selectedAnimal.personal_id
             breedArr.forEach(x => {                        

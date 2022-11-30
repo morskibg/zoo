@@ -477,6 +477,12 @@ class AnimalSchema(ma.SQLAlchemySchema):
     updated_at = auto_field()    
     breed = ma.Nested(BreedSchema) 
     additional_foods = ma.Nested(FoodSchema, many=True)
+    current_temp = fields.Method("get_current_temp")
+
+    def get_current_temp(self, obj):
+        if hasattr(obj, "current_temp"):
+            return obj.current_temp
+        return None
     
 class OccupancySchema(ma.SQLAlchemySchema):
     class Meta:
