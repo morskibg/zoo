@@ -55,8 +55,8 @@
                                     </a>
                                     <ul class="dropdown-menu">                                            
                                         <li><a class="dropdown-item" href="{{ url_for('main.animals') }}">Add</a></li>                                                                           
-                                        <li><a class="dropdown-item" href="{{ url_for('main.animal_edit') }}">Edit</a></li>
-                                        <li><a class="dropdown-item" href="{{ url_for('main.animal_maintanance') }}">Maintanance</a></li>                                                                           
+                                        <li><a class="dropdown-item" href="{{ url_for('main.animal_edit') }}">Edit/Settelment</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.animal_feed') }}">Feed</a></li>                                                                           
                                     </ul>
                                     
                                     
@@ -311,7 +311,7 @@
                                                     id: obj.personal_id,
                                                     name: obj.animal_name,                                    
                                                     breed: obj.breed.breed_name,
-                                                    weight: Math.round(obj.weight),
+                                                    weight: Math.round(obj.weight * 100) / 100,
                                                     food:obj.breed.breed_foods.map(item => item.food_name).join(),
                                                     add_food:obj.additional_foods.length === 0 ? '' : obj.additional_foods[0].food_name,
                                                     cage_id : occups.find(element => element.id === obj.id) ? 

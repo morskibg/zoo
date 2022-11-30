@@ -51,11 +51,11 @@ def get_remaining_cage_env_capacity(cage):
         return None
     return remaing_capacity                
 
-def get_initial_cage_energy(cage_id):
+def get_cage_current_energy(cage_id):
     energy = (
         db_session
         .query(                                                  
-            (func.sum(Food.energy*CageMeal.cage_meal_qty)).label('cage_food_energy'),                                    
+            (func.sum(Food.energy * CageMeal.cage_meal_qty)).label('cage_food_energy'),                                    
         )
         .select_from(CageMeal)
         .join(Food, Food.id ==  CageMeal.food_id)                      
@@ -63,6 +63,20 @@ def get_initial_cage_energy(cage_id):
         .all() 
     )
     return energy[0][0]
+
+def get_cage_current_food_supply(cage_id):
+    foods = (
+        db_session
+        .query(                                                  
+            Food.food_name.label('cage_food_name'),                                    
+            CageMeal.cage_meal_qty.label('cage_food_qty'),                                    
+        )
+        .select_from(CageMeal)
+        .join(Food, Food.id ==  CageMeal.food_id)                      
+        .filter(CageMeal.cage_id == cage_id)
+        .all() 
+    )
+    return foods
 
 def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_id):
     if curr_time is None:
@@ -86,25 +100,7 @@ def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_i
                 Occupancy.cage_id == cage_id,
             )
         .all() 
-    )
-    # cage_animal_data = (
-    #     db_session
-    #     .query(                                                  
-    #         (func.sum(Breed.min_food_energy_intake)).label('total_food_energy_req'),
-    #         func.count(Occupancy.animal_id).label('animals_count'), 
-    #         Breed.is_predator.label('is_predator'), 
-    #         func.max(Animal.weight).label('max_weight'),                                    
-    #         func.min(Animal.weight).label('min_weight')                                    
-    #     )
-    #     .join(Animal, Animal.id == Occupancy.animal_id)
-    #     .join(Breed, Breed.id == Animal.breed_id)       
-    #     .filter(
-    #             Occupancy.occuped_at < curr_time, 
-    #             Occupancy.left_at == None, 
-    #             Occupancy.cage_id == cage_id,
-    #         )
-    #     .all() 
-    # )
+    )   
 
     return cage_animal_data
 

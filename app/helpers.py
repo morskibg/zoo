@@ -1,13 +1,12 @@
 
-# from typing import TYPE_CHECKING
+
 from urllib import parse
 import pandas as pd
 import numpy as np
 import datetime as dt
 import pytz
 
-# if TYPE_CHECKING:
-#     from .query_helpers import get_cages 
+
 
 from .logger import get_logger
 
@@ -25,7 +24,8 @@ def generate_habitat_composite(habitat_data_list):
     habitat_tokens = list(tokens_df['tokens'])
     return ''.join(habitat_tokens)
 
-def is_suitable_cage_for_breed(breed, cage):
+def is_suitable_cage_habitat_for_breed(breed, cage):
+    
     return (
         cage.habitat.min_air_volume >= breed.habitat.min_air_volume and
         cage.habitat.min_water_volume >= breed.habitat.min_water_volume and
@@ -81,5 +81,5 @@ def is_safe_to_add_animal_to_cage(is_predator_in_cage, weight_in_cage, is_predat
 # def get_suitable_cages_by_breed(breed, * ,animal = None, cage_id = None):
 #     cages = get_cages(cage_id)
     
-#     cages = [x for x in cages if is_suitable_cage_for_breed(animal.breed, x)]
+#     cages = [x for x in cages if is_suitable_cage_habitat_for_breed(animal.breed, x)]
 

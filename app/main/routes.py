@@ -1,12 +1,13 @@
 import uuid
 import datetime as dt
+import json
 
-from flask import  render_template, redirect, url_for, flash
+from flask import  render_template, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from sqlalchemy.exc import  PendingRollbackError
 
 from .. database import init_db
-from .. models import User, Animal, Breed, Cage, Occupancy, Food, CageMeal
+from .. models import User, Animal, Breed, Cage, Occupancy, Food, CageMeal, AnimalMeal
 from .. logger import get_logger
 from .. api.routes import cages_get
 from . forms import LoginForm, RegistrationForm, AnimalForm, CageForm, CageMaintForm
@@ -165,13 +166,51 @@ def animal_edit():
             redirect(url_for('.animals'))
     return render_template('animal_edit.html', title='Modify animal', form=form, header="Edit existing animal's data ")
 
-@bp.route('/animal/maintanance',  methods=['GET','POST'])
-@bp.route('/animal/maintanance/<string:personal_id>',  methods=['GET', 'POST'])
+@bp.route('/animal/feed',  methods=['GET','POST'])
+# @bp.route('/animal/feed/<string:personal_id>',  methods=['GET', 'POST'])
 @login_required
-def animal_maintanance():
-    pass
+def animal_feed():
+    
+    if request.method == 'POST':
+       
+        data_dict = json.loads(request.data)
+        db_animal = Animal.query.filter(Animal.personal_id == data_dict.get('animal_id')).first()
+        db_cage  = Cage.query.filter(Cage.inventory_id == data_dict.get('cage_id')).first()
+        db_food  = Food.query.filter(Food.food_name == data_dict.get('food_name')).first()
+        acceptable_foods = [x.food_name for x in db_animal.breed.breed_foods] + db_animal.additional_foods
+        if db_food.food_name not in acceptable_foods:
+            return {'code':409, 'message':'Wrong food'}
+        cage_meal = CageMeal.query.filter(CageMeal.cage_id == db_cage.id, CageMeal.food_id == db_food.id).first()
+        if cage_meal is None or float(cage_meal.cage_meal_qty) < float( data_dict.get('food_qty', 100000)):
+            return {'code':409, 'message':'Wrong food in selected cage or insufficient qty'}
+        reamaining_qty = float(cage_meal.cage_meal_qty) - float( data_dict.get('food_qty', 0))
 
-    return render_template('animal_maintanance.html', title='Animal maintanance', header="Animal maintanance")
+        try:
+            if reamaining_qty:
+                cage_meal.update({'cage_meal_qty':reamaining_qty}) 
+            else:
+                cage_meal.delete()
+                       
+        except (ValueError, PendingRollbackError, Exception) as ex: 
+            return {'code':500, 'message':'Can not update cage meal'}           
+        if db_animal.breed.is_predator:
+            try:
+                db_animal.update({'weight':float(db_animal.weight) + float(db_animal.weight) * 0.01})
+            except (ValueError, PendingRollbackError, Exception) as ex: 
+                return {'code':500, 'message':'Can not update predator weight'}
+        new_animal_meal = AnimalMeal(
+            animal_id = db_animal.id,
+            food_id = db_food.id,
+            animal_meal_qty = float(data_dict.get('food_qty'))
+        )
+        try:
+            new_animal_meal.save()
+        except (ValueError, PendingRollbackError, Exception) as ex:
+            return {'code':500, 'message':'Can not update animal meal'}
+        
+        return {'code':200, 'message':'OK'}
+
+    return render_template('animal_feed.html', title='Animal feed', header="Animal feed")
 
 @bp.route('/cages',  methods=['GET', 'POST'])
 @login_required
@@ -223,13 +262,20 @@ def maintanance(id = None):
             return redirect(url_for('.index'))
         if form.additional_food.data.food_name and form.food_qty.data:
             curr_food = Food.query.filter(Food.food_name == form.additional_food.data.food_name).first()
-            meal = CageMeal(
-                cage_id = selected_cage.id,
-                food_id = curr_food.id,
-                cage_meal_qty = float(form.food_qty.data)
-            )
+            curr_meal = CageMeal.query.filter(CageMeal.cage_id == selected_cage.id, CageMeal.food_id == curr_food.id).first()
+            if curr_meal is None:
+                meal = CageMeal(
+                    cage_id = selected_cage.id,
+                    food_id = curr_food.id,
+                    cage_meal_qty = float(form.food_qty.data)
+                )
+            
+                
             try:
-                meal.save()
+                if curr_meal is None:
+                    meal.save()
+                else:
+                   curr_meal.update({'cage_meal_qty': float(form.food_qty.data)}) 
             except (ValueError, PendingRollbackError, Exception) as ex:
                 flash(str(ex),'danger')
                 return redirect(url_for('.index'))

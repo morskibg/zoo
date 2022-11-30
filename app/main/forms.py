@@ -78,3 +78,18 @@ class CageMaintForm(FlaskForm):
     selected_cage_id = HiddenField("selected_cage_id")
 
     wtf_submit = SubmitField('Save', render_kw={'hidden': True})
+
+    def validate_additional_food(form, field):
+        if form.data['additional_food']:
+            if not form.data['food_qty']:
+                flash('Please add food qty.','danger')
+                raise ValidationError("Miising food qty")
+
+    
+
+    # class FeedForm(FlaskForm):
+
+        
+    #     food_name = FloatField('Height', validators=[DataRequired(),NumberRange(min=1, max=10000, message='Please provide correct Height.')])
+
+    #     wtf_submit = SubmitField('Save', render_kw={'hidden': True})

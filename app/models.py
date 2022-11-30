@@ -144,7 +144,7 @@ class CageMeal(BaseModel):
     food_id = Column(ForeignKey("food.id"), primary_key=True)
     added_at = Column(DateTime, default=dt.datetime.utcnow)  
     cage_meal_qty = Column(Float(9,5), nullable = False)
-    cage_foods = relationship("Food")
+    cage_foods = relationship("Food")   
 
 class Occupancy(BaseModel):
     __tablename__ = 'occupancy'
@@ -153,8 +153,7 @@ class Occupancy(BaseModel):
     occuped_at = Column(DateTime, default=dt.datetime.utcnow)   
     left_at = Column(DateTime, nullable = True, default = None)
     cages = relationship("Cage", back_populates="occups")
-    animals = relationship("Animal", back_populates="occups")
-    
+    animals = relationship("Animal", back_populates="occups")    
     
 
 class Food(BaseModel):
@@ -331,6 +330,7 @@ class Cage(BaseModel):
     updated_at =Column(DateTime, default=dt.datetime.utcnow)
     habitat = relationship("Habitat", back_populates="cages")
     occups = relationship("Occupancy", back_populates="cages")
+    
 
     @validates(
         'width','cage_name',
@@ -494,4 +494,17 @@ class OccupancySchema(ma.SQLAlchemySchema):
     occuped_at = auto_field()
     left_at = auto_field()
     cages = ma.Nested(CageSchema, many=False)
+class CageMealSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = CageMeal
+        include_relationships = True
+        load_instance = True  
+    cage_id = auto_field()
+    food_id = auto_field()
+    added_at = auto_field()
+    cage_meal_qty = auto_field()
+    cage_foods = ma.Nested(FoodSchema, many=False)
 
+
+
+    

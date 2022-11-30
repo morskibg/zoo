@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% import 'bootstrap5/form.html' as wtf %}
+
+
+{% block app_content %}
+             
+    <div class='col-md-12'>  
+        <h1>{{header|safe}}</h1>        
+        <hr>         
+       
+        <label for="animal_table" id="animal-table-lbl">Registered animals in the zoo</label> 
+        <div id="animal_table" class="hot handsontable htRowHeaders htColumnHeaders" style="height: auto; overflow: auto; width: auto;" ></div>
+        <br>        
+        <br> 
+        <div id="meal-tbl-container">
+            <label for="meal_table" id="meal-table-lbl">Available foods for selected animal in cage</label> 
+            <div id="meal_table" class="hot handsontable htRowHeaders htColumnHeaders" style="height: auto; overflow: auto; width: auto;" ></div>
+            <br>        
+            <br>  
+            <div id="feeding-data" class="row">
+                <div class="col-md-3">
+                    <div style="float: left;"> 
+                        <label for="food-name">Food name</label>
+                        <input type="text" id="food-name"  >
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div style="float: left;"> 
+                        <label for="food-qty">Food Qty</label>
+                        <input type="text" id="food-qty"  >
+                    </div>
+                </div>
+            </div>     
+        </div> 
+        
+        <hr>
+        <br>        
+        <input class="btn  btn-primary w-100" type="submit" value="Feed Animal" id="update-animal-btn" disabled="true"  onclick="submit()" > 
+        <br>
+        <br>
+        
+    
+    </div> 
+
+    
+{% endblock %}
+{% block user_script %}
+    <script  src="{{ url_for('static', filename='js/table.js') }}"></script>
+    <script>
+        
+        const updateBtn = document.getElementById('update-animal-btn')
+        updateBtn.disabled = true   
+        const mealTableDiv = document.getElementById('meal-tbl-container')
+        mealTableDiv.style.display = 'none'
+        let mealTable = null  
+        let qty = null 
+        let animalId = null
+        let cageId = null
+        
+        const foodName = document.getElementById('food-name')        
+        const foodQty = document.getElementById('food-qty')        
+        
+        allAnimals()
+
+        const getMeals = (cageId) =>{
+            fetch(`/api/cage-meals/${cageId}`).then(function(response){                
+                response.json().then(function(data){
+                    if(data.length){ 
+                        console.log(data);                            
+                        const result = data.map(obj => ({                            
+                            food_name: obj.cage_foods.food_name,
+                            food_qty:  Math.round(obj.cage_meal_qty)                                                      
+                            
+                        }));
+                        const col_names = [
+                            "Food name", "Foot qty (kg)"                                          
+                        ] 
+                        
+                        mealTable = tableFactory(
+                            'meal_table', 
+                            result,
+                            col_names,                                                   
+                            )   
+                        Handsontable.hooks.add(
+                            'beforeSetRangeStart', 
+                            handleMealClick,                            
+                            mealTable
+                        );
+                    }                                                                               
+                });                
+            })
+            .catch(error => console.log('in error',error) );
+        }
+
+        
+        const handleMealClick = (coordinates) => {             
+            foodName.value = mealTable.getCell(coordinates.row, mealTable.propToCol('food_name')).innerText
+            qty = mealTable.getCell(coordinates.row, mealTable.propToCol('food_qty')).innerText
+            
+                             
+        }       
+        const handleAnimalClick = (coordinates) => {
+            foodName.value = ''  
+            foodQty.value = ''  
+            destroyMealTable()
+            mealTableDiv.style.display = 'none'
+            updateBtn.disabled = true
+            console.log(animalTable.getCell(coordinates.row, animalTable.propToCol('cage_id')).innerText); 
+            if(animalTable.getCell(coordinates.row, animalTable.propToCol('cage_id')).innerText !== 'unsettled')  {
+
+                getMeals(animalTable.getCell(coordinates.row, animalTable.propToCol('cage_id')).innerText)
+                mealTableDiv.style.display = 'block'
+                animalId = animalTable.getCell(coordinates.row, animalTable.propToCol('id')).innerText
+                cageId = animalTable.getCell(coordinates.row, animalTable.propToCol('cage_id')).innerText
+            }        
+                             
+        } 
+        
+        foodQty.onchange = () =>{
+            const inputVal = parseFloat(foodQty.value)
+            if(inputVal > 0 && inputVal <= parseFloat(qty)){
+                foodQty.value =inputVal
+                updateBtn.disabled = false 
+            }else{
+                foodQty.value = ''
+            }
+        }
+
+        const submit = () =>{
+            console.log('submit clicked')
+            const data =JSON.stringify(
+                {
+                    animal_id: animalId,
+                    cage_id: cageId,
+                    food_name: foodName.value,
+                    food_qty: foodQty.value
+                }
+            )  
+            // console.log(JSON.parse(data));   
+            
+            fetch(`${location.origin}/animal/feed`,{
+                method: 'POST',
+                Headers: {
+                    Accept: 'application.json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        animal_id: animalId,
+                        cage_id: cageId,
+                        food_name: foodName.value,
+                        food_qty: foodQty.value
+                    }
+                )
+                              
+            }).then(response => response.json().then(function(data){
+                console.log(data);
+                
+                window.location.href = `${window.location.origin}/animal/feed`
+            }))
+            .catch(error => {console.log('in error',error) });
+        }
+
+        const destroyMealTable = () =>{
+                    
+            if(mealTable && mealTable.rootElement){
+                try {
+                    mealTable.destroy()
+                } catch (error) {
+                    console.log(error)
+                }
+            }
+        }
+        
+       
+    </script>
+
+{% endblock %}
