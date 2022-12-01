@@ -46,6 +46,7 @@
                                     
                             id: obj.inventory_id,                                    
                             energy: obj.energy | 0,
+                            foods: obj.foods,
                             curr_temp: Math.round(obj.curr_temperature),
                             animals_qty: obj.animals_count,
                             min_predator_weight: obj.min_predator_weight,
@@ -63,6 +64,7 @@
                         const col_names = [
                             'Id',                                    
                             'Available energy',
+                            'Available foods',
                             'Current temperature',
                             'Animals in cage',
                             'Predators min weight', 

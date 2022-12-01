@@ -11,7 +11,8 @@ from .. query_helpers import (get_occuped_cages_by_time,
                              get_remaining_cage_env_capacity, 
                              get_cage_animal_data,
                              get_cage_current_energy,
-                             get_cage_current_food_supply
+                             get_cage_current_food_supply,
+                             update_cold_blooded_weights
                              )
 from . import bp
 
@@ -21,6 +22,7 @@ from . import bp
 @bp.route('/animals/<string:personal_id>', methods=['GET']) #methods=['GET','POST','PUT','DELETE'])
 def animals(personal_id = None):
     animal_schema = AnimalSchema()
+    # update_cold_blooded_weights()
     query_dict = parse_urlargs(request.url)
     if query_dict:
         pass
@@ -39,6 +41,7 @@ def animals(personal_id = None):
 @bp.route('/breeds/<string:arg>', methods=['GET']) 
 def breeds(arg = None):
     breed_schema = BreedSchema()
+    # update_cold_blooded_weights()
     filters = []
     if arg is not None:
         try:
@@ -66,7 +69,7 @@ def breeds(arg = None):
 def cages_get(kwarg_dict = None): 
     cage_schema = CageSchema() 
     cages = Cage.query.all()
-
+    update_cold_blooded_weights()
     if kwarg_dict is not None:
         query_dict = {}
         if 'cage_id' in kwarg_dict.keys():
@@ -150,6 +153,7 @@ def cages_get(kwarg_dict = None):
                     is_safe = cage_animals_data_df['is_safe'].all()
                 
                 cage.is_safe = int(is_safe)
+                cage.foods = ', '.join([food[0] for food in cage_foods])
                 suitable_cages.append(cage)
 
         elif 'animal_id' in query_dict: 
@@ -159,6 +163,7 @@ def cages_get(kwarg_dict = None):
         for cage in cages:
             max_weight = 0
             min_weight = 0
+            cage_foods = get_cage_current_food_supply(cage.id)
             remaing_capacity = get_remaining_cage_env_capacity(cage)
             initial_cage_energy = get_cage_current_energy(cage.id)
             cage_animals_data = get_cage_animal_data(cage_id = cage.id)
@@ -181,7 +186,7 @@ def cages_get(kwarg_dict = None):
                 max_weight = float(cage_animals_data_df['weight'].max())
             cage.max_predator_weight = max_weight 
             cage.min_predator_weight = min_weight             
-            
+            cage.foods = ', '.join([food[0] for food in cage_foods])
             suitable_cages.append(cage)                 
     try:
         return jsonify(cage_schema.dump(suitable_cages, many=len(suitable_cages)))

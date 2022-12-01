@@ -118,6 +118,10 @@ association_table_animal_additional_food = Table(
     Column("food_id", ForeignKey("food.id"), primary_key = True),
 )
 
+class InitialDate(BaseModel):
+    __tablename__ = 'initial_date'
+    initial_date = Column(DateTime, primary_key = True, default=dt.datetime.utcnow)
+
 class Movement(BaseModel):
     __tablename__ = 'movement'
     id = Column(Integer, primary_key = True)
@@ -405,6 +409,7 @@ class CageSchema(ma.SQLAlchemySchema):
     min_predator_weight = fields.Method("get_min_predator_weight")
     has_predator = fields.Method("get_has_predator")
     is_safe = fields.Method("get_is_safe")
+    foods = fields.Method("get_foods")
 
     def get_energy(self, obj):
         if hasattr(obj, "energy"):
@@ -434,6 +439,11 @@ class CageSchema(ma.SQLAlchemySchema):
     def get_is_safe(self, obj):
         if hasattr(obj, "is_safe"):
             return obj.is_safe
+        return None
+    
+    def get_foods(self, obj):
+        if hasattr(obj, "foods"):
+            return obj.foods
         return None
     
 class MovementSchema(ma.SQLAlchemySchema):

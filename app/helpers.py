@@ -1,12 +1,9 @@
-
-
 from urllib import parse
 import pandas as pd
 import numpy as np
 import datetime as dt
 import pytz
-
-
+from dateutil import relativedelta
 
 from .logger import get_logger
 
@@ -78,8 +75,23 @@ def is_safe_to_add_animal_to_cage(is_predator_in_cage, weight_in_cage, is_predat
     if is_predator_in_cage or is_predator:
         return abs(weight_in_cage - weight) > (min(weight_in_cage , weight)) * 10
     
-# def get_suitable_cages_by_breed(breed, * ,animal = None, cage_id = None):
-#     cages = get_cages(cage_id)
+def get_date_approximation(target_date, now_date = None):
+
+    from .query_helpers import get_initial_date
+
+    initial_date_obj = get_initial_date()
+    now_date = dt.datetime.utcnow() if now_date is None else now_date
+
+    delta_now_to_initial = relativedelta.relativedelta(now_date, initial_date_obj.initial_date)
+    adjusted_now_date = now_date + dt.timedelta(days = delta_now_to_initial.minutes)
     
-#     cages = [x for x in cages if is_suitable_cage_habitat_for_breed(animal.breed, x)]
+    delta_target_to_initial = relativedelta.relativedelta(target_date, initial_date_obj.initial_date)
+    adjusted_target_date = target_date + dt.timedelta(days = delta_target_to_initial.minutes)
+
+    
+    
+    return adjusted_target_date, adjusted_now_date   
+
+
+    
 

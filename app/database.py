@@ -44,7 +44,7 @@ def init_db(need_reset = False):
 
 
 def seed_db():
-    from .models import Food, Movement, Breed, Habitat, Cage, CageMeal
+    from .models import Food, Movement, Breed, Habitat, Cage, CageMeal, InitialDate
     module_logger.info('Seeding DB')
 
     f_m_dict = {
@@ -187,6 +187,7 @@ def seed_db():
         chunksize=1000,
         index=False
     )
+    InitialDate(initial_date = dt.datetime.utcnow()).save()
 
     
     

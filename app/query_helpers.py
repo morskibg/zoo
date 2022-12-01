@@ -1,5 +1,6 @@
+from dateutil import relativedelta
 from sqlalchemy import func
-from .helpers import convert_date_to_utc_with_hours
+from .helpers import convert_date_to_utc_with_hours, get_date_approximation
 from .models import *
 from .logger import get_logger
 
@@ -104,8 +105,49 @@ def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_i
 
     return cage_animal_data
 
-def get_cages(cage_id = None):
-    return Cage.query.all() if cage_id is None else Cage.query.filter(Cage.id == cage_id).all()
+def update_cold_blooded_weights():
+    print('updating cold blooded weights')
+    curr_date = dt.datetime.utcnow()
+    cold_blooded_sub = (
+        db_session
+        .query( 
+            Occupancy.animal_id,                                         
+        )        
+        .join(Animal, Animal.id == Occupancy.animal_id)
+        .join(Breed, Breed.id == Animal.breed_id)            
+        .filter(
+            Occupancy.occuped_at < curr_date, 
+            Occupancy.left_at == None,                 
+        )
+        .filter(Breed.is_cold_blooded == True)
+        .subquery()
+    )
+    animals = Animal.query.join(cold_blooded_sub, cold_blooded_sub.c.animal_id == Animal.id).all() 
+    if not animals :
+        return   
+    for animal in animals:
+
+        adjusted_target_date, adjusted_now_date = get_date_approximation(animal.updated_at, curr_date)
+        delta_between_approx_dates  = relativedelta.relativedelta(adjusted_now_date, adjusted_target_date)
+        aproximated_months_diff = delta_between_approx_dates.months
+        print(adjusted_target_date, adjusted_now_date)  
+        print(f'{aproximated_months_diff=}')  
+        if not aproximated_months_diff:
+            continue
+        animal_new_weight = float(animal.weight) * 0.13 * aproximated_months_diff + float(animal.weight)
+        try:
+            animal.update({
+                'weight':animal_new_weight,
+                'updated_at': curr_date
+            })
+        except Exception as ex:
+            continue
+
+def get_initial_date():
+    return InitialDate.query.first()
+  
+    
+
     
 
 
