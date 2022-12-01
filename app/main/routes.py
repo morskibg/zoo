@@ -268,9 +268,7 @@ def maintanance(id = None):
                     cage_id = selected_cage.id,
                     food_id = curr_food.id,
                     cage_meal_qty = float(form.food_qty.data)
-                )
-            
-                
+                )               
             try:
                 if curr_meal is None:
                     meal.save()

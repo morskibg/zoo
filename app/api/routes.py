@@ -12,7 +12,7 @@ from .. query_helpers import (get_occuped_cages_by_time,
                              get_cage_animal_data,
                              get_cage_current_energy,
                              get_cage_current_food_supply,
-                             update_cold_blooded_weights
+                             update_non_predator_weights
                              )
 from . import bp
 
@@ -22,7 +22,7 @@ from . import bp
 @bp.route('/animals/<string:personal_id>', methods=['GET']) #methods=['GET','POST','PUT','DELETE'])
 def animals(personal_id = None):
     animal_schema = AnimalSchema()
-    # update_cold_blooded_weights()
+    
     query_dict = parse_urlargs(request.url)
     if query_dict:
         pass
@@ -31,7 +31,9 @@ def animals(personal_id = None):
         animals = (Animal.query.all() 
             if personal_id is None 
             else Animal.query.filter(Animal.personal_id == personal_id).first()
-        )             
+        ) 
+        for animal in animals:
+            pass            
         try:
             return jsonify(animal_schema.dump(animals, many=personal_id is None))
         except:            
@@ -41,7 +43,7 @@ def animals(personal_id = None):
 @bp.route('/breeds/<string:arg>', methods=['GET']) 
 def breeds(arg = None):
     breed_schema = BreedSchema()
-    # update_cold_blooded_weights()
+    
     filters = []
     if arg is not None:
         try:
@@ -69,7 +71,7 @@ def breeds(arg = None):
 def cages_get(kwarg_dict = None): 
     cage_schema = CageSchema() 
     cages = Cage.query.all()
-    update_cold_blooded_weights()
+    update_non_predator_weights()
     if kwarg_dict is not None:
         query_dict = {}
         if 'cage_id' in kwarg_dict.keys():

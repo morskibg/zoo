@@ -105,10 +105,10 @@ def get_cage_animal_data(time_zone = 'Europe/Sofia', curr_time = None, *, cage_i
 
     return cage_animal_data
 
-def update_cold_blooded_weights():
-    print('updating cold blooded weights')
+def update_non_predator_weights():
+    
     curr_date = dt.datetime.utcnow()
-    cold_blooded_sub = (
+    non_predators_sub = (
         db_session
         .query( 
             Occupancy.animal_id,                                         
@@ -119,10 +119,10 @@ def update_cold_blooded_weights():
             Occupancy.occuped_at < curr_date, 
             Occupancy.left_at == None,                 
         )
-        .filter(Breed.is_cold_blooded == True)
+        .filter(Breed.is_predator == False)
         .subquery()
     )
-    animals = Animal.query.join(cold_blooded_sub, cold_blooded_sub.c.animal_id == Animal.id).all() 
+    animals = Animal.query.join(non_predators_sub, non_predators_sub.c.animal_id == Animal.id).all() 
     if not animals :
         return   
     for animal in animals:
@@ -145,6 +145,19 @@ def update_cold_blooded_weights():
 
 def get_initial_date():
     return InitialDate.query.first()
+
+def get_predator_last_meal():
+    predator_last_meal = (
+        db_session
+        .query( 
+            AnimalMeal.animal_id, AnimalMeal.served_at,Breed.is_predator                                          
+        )        
+        .join(Animal, Animal.id == AnimalMeal.animal_id)
+        .join(Breed, Breed.id == Animal.breed_id)        
+        .filter(Breed.is_predator == True)
+        .all()
+    )
+    
   
     
 

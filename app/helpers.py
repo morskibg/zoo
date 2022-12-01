@@ -86,9 +86,7 @@ def get_date_approximation(target_date, now_date = None):
     adjusted_now_date = now_date + dt.timedelta(days = delta_now_to_initial.minutes)
     
     delta_target_to_initial = relativedelta.relativedelta(target_date, initial_date_obj.initial_date)
-    adjusted_target_date = target_date + dt.timedelta(days = delta_target_to_initial.minutes)
-
-    
+    adjusted_target_date = target_date + dt.timedelta(days = delta_target_to_initial.minutes)    
     
     return adjusted_target_date, adjusted_now_date   
 

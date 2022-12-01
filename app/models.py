@@ -34,11 +34,7 @@ class BaseModel(Base):
             module_logger.error(f'{ex.__class__.__name__} - {ex}')
             module_logger.error(f'Exception at row --->{sys.exc_info()[2].tb_lineno} from {__name__}')
             raise ValueError(f'Error on saving in database !')            
-        else: 
-            try:
-                flash(f'{self} saved in db successfully','success')
-            except:
-                pass
+        else:             
             module_logger.info(f'{self} commiting to db')
 
     def update(self, data: dict):
@@ -49,11 +45,7 @@ class BaseModel(Base):
         except ValueError as ex:            
             module_logger.error(f'Error on updating {self} in database.')          
             raise      
-        else:
-            try:
-                flash(f'{self} updated successfully','success')
-            except:
-                pass
+        else:            
             module_logger.info(f'{self} updated successfully')
 
     def delete(self):        
@@ -65,11 +57,7 @@ class BaseModel(Base):
             module_logger.error(f'{ex}')
             module_logger.error(f'Exception at row --->{sys.exc_info()[2].tb_lineno}') 
             raise ValueError(f'Error on updating {self} in database !')       
-        else:
-            try:
-                flash(f'{self} deleted successfully','success')
-            except:
-                pass
+        else:            
             module_logger.info(f'{self} deleted successfully')
 
 class User(UserMixin, BaseModel):
@@ -138,7 +126,7 @@ class AnimalMeal(BaseModel):
     __tablename__ = 'animal_meal'
     animal_id = Column(ForeignKey("animal.id"), primary_key=True)
     food_id = Column(ForeignKey("food.id"), primary_key=True)
-    served_at = Column(DateTime, default=dt.datetime.utcnow)  
+    served_at = Column(DateTime, primary_key=True, default=dt.datetime.utcnow)  
     animal_meal_qty = Column(Float(9,5), nullable = False)
     animal_foods = relationship("Food")
 

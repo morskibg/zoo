@@ -156,6 +156,11 @@
                               
             }).then(response => response.json().then(function(data){
                 console.log(data);
+                if(data.code !== 200){
+
+                    alert(data.message)
+                }
+
                 
                 window.location.href = `${window.location.origin}/animal/feed`
             }))
