@@ -1,5 +1,5 @@
 from dateutil import relativedelta
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from .helpers import convert_date_to_utc_with_hours, get_date_approximation
 from .models import *
 from .logger import get_logger
@@ -146,18 +146,28 @@ def update_non_predator_weights():
 def get_initial_date():
     return InitialDate.query.first()
 
-def get_predator_last_meal():
-    predator_last_meal = (
-        db_session
-        .query( 
-            AnimalMeal.animal_id, AnimalMeal.served_at,Breed.is_predator                                          
-        )        
-        .join(Animal, Animal.id == AnimalMeal.animal_id)
-        .join(Breed, Breed.id == Animal.breed_id)        
-        .filter(Breed.is_predator == True)
+def get_animal_last_meal():
+
+    latest_meal_sub = (
+        db_session.query(
+            AnimalMeal,
+            func.rank()
+            .over(
+                order_by=AnimalMeal.served_at.desc(),
+                partition_by=AnimalMeal.animal_id,
+            )
+            .label("rank"),
+        )
+        .subquery()
+    )
+
+    latest_meal = (
+        db_session.query(latest_meal_sub)             
+        .filter(latest_meal_sub.c.rank == 1)        
         .all()
     )
-    
+    return latest_meal
+
   
     
 

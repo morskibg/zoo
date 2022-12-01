@@ -1,22 +1,31 @@
 import pandas as pd
+import numpy as np
+from dateutil import relativedelta
 from flask import request, jsonify, redirect, url_for
 
 
 from .. models import *
 from .. helpers import (parse_urlargs, 
                         is_suitable_cage_habitat_for_breed, 
-                        is_safe_to_add_animal_to_cage)
+                        is_safe_to_add_animal_to_cage,
+                        get_date_approximation
+                        )
 
 from .. query_helpers import (get_occuped_cages_by_time,
                              get_remaining_cage_env_capacity, 
                              get_cage_animal_data,
                              get_cage_current_energy,
                              get_cage_current_food_supply,
-                             update_non_predator_weights
+                             update_non_predator_weights,
+                             get_animal_last_meal
                              )
+from .. logger import get_logger
 from . import bp
 
+module_logger = get_logger(__name__)
 
+NON_COLD_BLOODED_TEMP = 36
+COLD_BLOODED_TEMP_ADD = 10
 
 @bp.route('/animals', methods=['GET'])
 @bp.route('/animals/<string:personal_id>', methods=['GET']) #methods=['GET','POST','PUT','DELETE'])
@@ -32,8 +41,34 @@ def animals(personal_id = None):
             if personal_id is None 
             else Animal.query.filter(Animal.personal_id == personal_id).first()
         ) 
+        animal_last_meal = get_animal_last_meal()
+        animal_meal_df = None
+        if animal_last_meal:
+            animal_meal_df = pd.DataFrame.from_records(animal_last_meal, columns = animal_last_meal[0].keys())
         for animal in animals:
-            pass            
+            occuped_cage = get_occuped_cages_by_time(animal_id = animal.id)
+            if not occuped_cage:
+                continue
+            if not animal.breed.is_cold_blooded:
+                if animal.id in list(animal_meal_df['animal_id']):
+                    last_meal_date = (
+                        dt.datetime.strptime(
+                            np.datetime_as_string(
+                                animal_meal_df[animal_meal_df['animal_id'] == animal.id]['served_at'].values[0], unit="s"), "%Y-%m-%dT%H:%M:%S"))
+                    adjusted_last_meal_date, adjusted_now_date = get_date_approximation(last_meal_date)
+                    delta_between_approx_dates  = relativedelta.relativedelta(adjusted_now_date, adjusted_last_meal_date)
+                    curr_temp = NON_COLD_BLOODED_TEMP - delta_between_approx_dates.days
+                    animal.current_temp = curr_temp if curr_temp >=0 else 0
+                    # if curr_temp < 0:
+                    #     module_logger.info(f'Animal {animal.breed.species} named {animal.name} is frozen. Deleting')
+                    #     animal.delete()
+                else:
+                    animal.current_temp = NON_COLD_BLOODED_TEMP
+            else:
+                animal.current_temp = float(occuped_cage[0].curr_temperature) + COLD_BLOODED_TEMP_ADD
+
+                        
+                        
         try:
             return jsonify(animal_schema.dump(animals, many=personal_id is None))
         except:            

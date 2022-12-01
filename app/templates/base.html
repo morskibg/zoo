@@ -314,6 +314,7 @@
                                                     name: obj.animal_name,                                    
                                                     breed: obj.breed.breed_name,
                                                     weight: Math.round(obj.weight * 100) / 100,
+                                                    current_temp: obj.current_temp,
                                                     food:obj.breed.breed_foods.map(item => item.food_name).join(),
                                                     add_food:obj.additional_foods.length === 0 ? '' : obj.additional_foods[0].food_name,
                                                     cage_id : occups.find(element => element.id === obj.id) ? 
@@ -326,7 +327,7 @@
                                                     
                                                 }));
                                                 const col_names = [
-                                                    "Id", "Name", "Breed","Weight (kg)","Food","Additional food","Cage id" ,"Settlement date"                                           
+                                                    "Id", "Name", "Breed","Weight (kg)","Current temp (C)","Food","Additional food","Cage id" ,"Settlement date"                                           
                                                 ] 
                                                 
                                                 animalTable = tableFactory(

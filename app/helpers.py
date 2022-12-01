@@ -83,13 +83,15 @@ def get_date_approximation(target_date, now_date = None):
     now_date = dt.datetime.utcnow() if now_date is None else now_date
 
     delta_now_to_initial = relativedelta.relativedelta(now_date, initial_date_obj.initial_date)
-    adjusted_now_date = now_date + dt.timedelta(days = delta_now_to_initial.minutes)
+    adjusted_now_date = now_date + dt.timedelta(days = calculate_total_time_diff_in_munutes(delta_now_to_initial))
     
     delta_target_to_initial = relativedelta.relativedelta(target_date, initial_date_obj.initial_date)
-    adjusted_target_date = target_date + dt.timedelta(days = delta_target_to_initial.minutes)    
+    adjusted_target_date = target_date + dt.timedelta(days = calculate_total_time_diff_in_munutes(delta_target_to_initial)) 
     
     return adjusted_target_date, adjusted_now_date   
 
 
-    
+def calculate_total_time_diff_in_munutes(delta):
+    total_minutes = delta.years*365*24*60 + delta.months*30*24*60 + delta.days*24*60 + delta.hours*60 + delta.minutes
+    return total_minutes
 
